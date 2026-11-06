@@ -11,6 +11,7 @@ import { type View } from '@/views/types/View';
 import { useUpdateViewFromCurrentState } from '@/views/view-picker/hooks/useUpdateViewFromCurrentState';
 import { viewPickerIsDirtyComponentState } from '@/views/view-picker/states/viewPickerIsDirtyComponentState';
 import { viewPickerIsPersistingComponentState } from '@/views/view-picker/states/viewPickerIsPersistingComponentState';
+import { viewPickerReferenceViewIdComponentState } from '@/views/view-picker/states/viewPickerReferenceViewIdComponentState';
 import { viewPickerSelectedIconComponentState } from '@/views/view-picker/states/viewPickerSelectedIconComponentState';
 import { styled } from '@linaria/react';
 import { useEffect, useRef, useState } from 'react';
@@ -71,6 +72,10 @@ export const ObjectOptionsDropdownMenuViewName = ({
     viewPickerIsDirtyComponentState,
   );
 
+  const setViewPickerReferenceViewId = useSetAtomComponentState(
+    viewPickerReferenceViewIdComponentState,
+  );
+
   const { setAndPersistViewName, setAndPersistViewIcon } =
     useUpdateObjectViewOptions();
 
@@ -87,10 +92,20 @@ export const ObjectOptionsDropdownMenuViewName = ({
         return;
       }
 
+      // The options menu always renames the view it is opened on. The picker's
+      // reference view is only set when opening the create/edit flows, and can
+      // still point at a view that is not persisted (e.g. the INDEX view) after
+      // a new view was created, so it must be re-pointed here.
+      setViewPickerReferenceViewId(currentView.id);
       await updateViewFromCurrentState();
     },
     focusId: dropdownId,
-    dependencies: [viewPickerIsPersisting, updateViewFromCurrentState],
+    dependencies: [
+      viewPickerIsPersisting,
+      updateViewFromCurrentState,
+      currentView.id,
+      setViewPickerReferenceViewId,
+    ],
   });
 
   const handleIconChange = ({ iconKey }: { iconKey: string }) => {

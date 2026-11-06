@@ -73,24 +73,31 @@ export const TextInput = ({
   disabled,
   className,
 }: TextInputProps) => {
+  // The raw text is kept while typing so that intermediate whitespace (e.g. the
+  // space between two words) is not dropped; trimming only applies to the value
+  // reported to the parent and to the submit callbacks.
   const [internalText, setInternalText] = useState(value);
 
   const wrapperRef = useRef<HTMLInputElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setInternalText(getValue(event.target.value, shouldTrim));
+    setInternalText(event.target.value);
     onChange?.(getValue(event.target.value, shouldTrim));
   };
   useEffect(() => {
-    setInternalText(getValue(value, shouldTrim));
+    setInternalText((currentText) =>
+      getValue(currentText, shouldTrim) === getValue(value, shouldTrim)
+        ? currentText
+        : getValue(value, shouldTrim),
+    );
   }, [value, shouldTrim]);
 
   useRegisterInputEvents({
     focusId: instanceId,
     inputRef: wrapperRef,
     copyRef: copyRef,
-    inputValue: internalText,
+    inputValue: getValue(internalText, shouldTrim),
     onEnter,
     onEscape,
     onClickOutside,
